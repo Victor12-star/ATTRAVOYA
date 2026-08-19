@@ -1,0 +1,13 @@
+{
+  "name": "@attravoya/config",
+  "version": "1.0.0",
+  "description": "Shared system constants, brand configurations, and routing maps for AttraVoya",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "build": "echo 'No build step required for config package'"
+  }
+}

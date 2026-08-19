@@ -1,0 +1,341 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Roles defining what access a user has in AttraVoya
+enum Role {
+  USER
+  ADMIN
+}
+
+// 2. Traveler Account model
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  passwordHash      String
+  fullName          String
+  role              Role         @default(USER)
+  homeCountry       String?
+  homeCity          String?
+  prefCurrency      String       @default("USD")
+  prefLanguage      String       @default("en")
+  isMfaEnabled      Boolean      @default(false)
+  mfaSecret         String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  sessions          Session[]
+  savedItems        SavedItem[]
+  trips             Trip[]
+  priceAlerts       PriceAlert[]
+  auditLogs         AuditLog[]
+}
+
+// 3. User Login Sessions
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
+
+// 4. Destination (Countries or Cities) model
+model Destination {
+  id                String            @id @default(uuid())
+  slug              String            @unique
+  name              String
+  type              String            // "COUNTRY", "CITY", "REGION"
+  parentId          String?           // Allows hierarchy (e.g. Country France -> City Paris)
+  parent            Destination?      @relation("SubDestinations", fields: [parentId], references: [id])
+  children          Destination[]     @relation("SubDestinations")
+  
+  airportCode       String?           // e.g. "CDG" for Paris, "NRT" for Tokyo
+  latitude          Float
+  longitude         Float
+  
+  description       String
+  coverImage        String
+  
+  // Connections to other tables
+  history           History?
+  timeline          TimelineItem[]
+  languages         LanguageRelation[]
+  phrases           TravelPhrase[]
+  safetyAdvisories  SafetyAdvisory[]
+  taxiPrices        TaxiPrice?
+  transportOptions  Transportation[]
+  restaurants       Restaurant[]
+  shoppingCentres   ShoppingCentre[]
+  weatherData       WeatherData[]
+  costOfLiving      CostOfLiving?
+  attractions       Attraction[]
+  savedBy           SavedItem[]
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+// 5. Extended Historical Summary
+model History {
+  id             String      @id @default(uuid())
+  destinationId  String      @unique
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  nameOrigin     String
+  summary        String
+  extendedHtml   String      // Rich text description
+  sources        String[]
+  lastReviewed   DateTime    @default(now())
+}
+
+// 6. Historic milestones chronologies
+model TimelineItem {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  year           String
+  title          String
+  description    String
+}
+
+// 7. Spoken Languages mapping
+model LanguageRelation {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  languageName   String
+  type           String      // "OFFICIAL", "COMMON", "REGIONAL", "MINORITY"
+  proficiencyInfo String?
+}
+
+// 8. Tourist useful translations
+model TravelPhrase {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  englishPhrase  String
+  translation    String
+  pronunciation  String
+  audioUrl       String?
+}
+
+// 9. Tourist Attractions (Museums, Parks)
+model Attraction {
+  id                String      @id @default(uuid())
+  destinationId     String
+  destination       Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  name              String
+  type              String      // "HISTORICAL", "NON_HISTORICAL"
+  isChildrenFriendly Boolean     @default(false)
+  isAdultOnly       Boolean     @default(false)
+  description       String
+  latitude          Float
+  longitude         Float
+  images            String[]
+  builtBy           String?
+  builtDate         String?
+  originalPurpose   String?
+  culturalImportance String?
+  interestingFacts  String[]
+  openingHours      String
+  priceAdult        Float
+  priceChild        Float
+  priceFamily       Float
+  accessibilityInfo String
+  dressCode         String?
+  rules             String[]
+  visitDuration     Float       // Recommended duration in hours
+  bestTime          String
+  taxiEstimate      Float
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+// 10. Official Safety advisories
+model SafetyAdvisory {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  severity       String      // "LOW", "MODERATE", "HIGH", "CRITICAL"
+  headline       String
+  description    String
+  advice         String
+  source         String
+  sourceUrl      String
+  publishedAt    DateTime
+  lastCheckedAt  DateTime    @default(now())
+}
+
+// 11. Licensed Taxi rate card
+model TaxiPrice {
+  id                 String      @id @default(uuid())
+  destinationId      String      @unique
+  destination        Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  currency           String
+  startFare          Float
+  pricePerKm         Float
+  waitingFeePerHour  Float
+  airportToCenterFare Float
+  centerToAirportFare Float
+  bookingFee         Float
+  scamsWarning       String
+  safetyAdvice       String
+  lastUpdated        DateTime    @default(now())
+}
+
+// 12. Local Transportation networks
+model Transportation {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  type           String      // "METRO", "BUS", "TRAIN", "TRAM", "FERRY"
+  title          String
+  pricingDetails String
+  operatingHours String
+  paymentMethods String[]
+  accessibility  String
+  safetyAdvice   String
+}
+
+// 13. Gastronomy Restaurants
+model Restaurant {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  name           String
+  cuisine        String[]
+  priceRange     String      // "$", "$$", "$$$", "$$$$"
+  averageCostMeal Float
+  location       String
+  latitude       Float
+  longitude      Float
+  openingHours   String
+  isChildFriendly Boolean    @default(true)
+  hasChildrenMenu Boolean    @default(false)
+  accessibility  String
+  menuUrl        String?
+}
+
+// 14. Markets and Shopping
+model ShoppingCentre {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  name           String
+  type           String      // "MALL", "LOCAL_MARKET", "STREET", "CRAFT"
+  location       String
+  latitude       Float
+  longitude      Float
+  openingHours   String
+  priceLevel     String      // "LOW", "MEDIUM", "HIGH"
+  specialties    String[]
+  safetyAdvice   String?
+  taxRefundInfo  String?
+}
+
+// 15. Climate and monthly weather
+model WeatherData {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  month          Int         // 1 to 12
+  avgTempHigh    Float
+  avgTempLow     Float
+  rainDays       Float
+  humidity       Float
+  bestToVisit    Boolean     @default(false)
+  seasonType     String      // "DRY", "RAINY", "HOT", "COLD"
+}
+
+// 16. Cost of Living baseline indexes
+model CostOfLiving {
+  id                 String      @id @default(uuid())
+  destinationId      String      @unique
+  destination        Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  hotelPriceAvg      Float
+  hostelPriceAvg     Float
+  groceryIndex       Float
+  restaurantPriceAvg Float
+  publicTransportFare Float
+  dailyBudgetBudget  Float
+  dailyBudgetMid     Float
+  dailyBudgetLuxury  Float
+  lastUpdated        DateTime    @default(now())
+}
+
+// 17. User Saved Favourites
+model SavedItem {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  type           String
+  savedRefId     String?
+  createdAt      DateTime    @default(now())
+}
+
+// 18. User Itineraries Planner
+model Trip {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  startDate      DateTime
+  endDate        DateTime
+  totalCost      Float       @default(0.0)
+  currency       String      @default("USD")
+  notes          String?
+  isShared       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  activities     TripActivity[]
+}
+
+// 19. Individual Daily Activities within Itinerary
+model TripActivity {
+  id             String      @id @default(uuid())
+  tripId         String
+  trip           Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  date           DateTime
+  timeSlot       String?     
+  title          String
+  description    String?
+  cost           Float       @default(0.0)
+  category       String      
+}
+
+// 20. Flight / Hotel Price alert settings
+model PriceAlert {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  origin         String?
+  destinationCode String
+  targetPrice    Float
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+}
+
+// 21. Append-only system audit logger
+model AuditLog {
+  id             String      @id @default(uuid())
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         String
+  ipAddress      String?
+  details        String
+  createdAt      DateTime    @default(now())
+}

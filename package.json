@@ -1,0 +1,19 @@
+{
+  "name": "attravoya-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AttraVoya Travel Discovery and Comparison Platform",
+  "type": "module",
+  "scripts": {
+    "install:all": "npm install",
+    "dev:server": "npm run dev --workspace=attravoya-server",
+    "start:server": "npm run start --workspace=attravoya-server",
+    "dev:web": "npm run dev --workspace=attravoya-client-web",
+    "build:web": "npm run build --workspace=attravoya-client-web",
+    "start:web": "npm run start --workspace=attravoya-client-web"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["es2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@attravoya/config": ["packages/config/src/index.js"],
+      "@attravoya/validation": ["packages/validation/src/index.js"],
+      "@attravoya/database": ["packages/database/src/client.js"]
+    }
+  }
+}
