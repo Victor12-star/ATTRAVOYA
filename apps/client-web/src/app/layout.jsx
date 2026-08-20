@@ -7,11 +7,12 @@
  * 1. Injecting global providers (ThemeProvider and AuthProvider).
  * 2. Enforcing high-contrast font settings.
  * 3. Enforcing accessible WCAG semantic wrappers (<header>, <main>, <footer>).
+ * 4. Rendering our sticky floating AI Travel Chatbot assistant globally!
  */
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import "./globals.css";
 
 // Import global providers
@@ -22,7 +23,13 @@ import { AuthProvider } from "../providers/AuthProvider.jsx";
 import { Header } from "../components/layout/Header.jsx";
 import { Footer } from "../components/layout/Footer.jsx";
 
+// Import AI Chatbot Assistant components
+import { ChatButton } from "../components/chat/ChatButton.jsx";
+import { ChatWindow } from "../components/chat/ChatWindow.jsx";
+
 export default function RootLayout({ children }) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   return (
     <html lang="en">
       <head>
@@ -50,6 +57,10 @@ export default function RootLayout({ children }) {
               {children}
             </main>
             
+            {/* Global Floating AI Travel Assistant */}
+            <ChatButton isOpen={isChatOpen} onClick={() => setIsChatOpen(!isChatOpen)} />
+            <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+
             {/* Footer Guard */}
             <Footer />
             
