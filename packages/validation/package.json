@@ -1,0 +1,16 @@
+{
+  "name": "@attravoya/validation",
+  "version": "1.0.0",
+  "description": "Zod Validation schemas shared across AttraVoya clients and backend",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "build": "echo 'No build step required for validation package'"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}
