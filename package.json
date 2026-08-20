@@ -4,6 +4,7 @@
   "private": true,
   "description": "AttraVoya Travel Discovery and Comparison Platform",
   "type": "module",
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "install:all": "npm install",
     "dev:server": "npm run dev --workspace=attravoya-server",
